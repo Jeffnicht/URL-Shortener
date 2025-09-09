@@ -5,6 +5,7 @@ from flask import request,render_template
 from .calcStringtoSeconds import convert_to_seconds
 import os
 
+maxUrlLen = 800
 shortener = Blueprint('shortener', __name__)
 
 def normalize_url(url):
@@ -51,6 +52,9 @@ def redirect_short_url(short_code):
 def shorten_url():
     try:
         raw_url = request.form.get("url")
+        if len(raw_url) > maxUrlLen:
+            return render_template("index.html", url_too_long=True)
+        
         url = normalize_url(raw_url)  # Add protocol if missing
         
         retain = request.form.get("retain", "")
@@ -74,6 +78,7 @@ def shorten_url():
                                retain=retain)
     except RuntimeError:
         return redirect(url_for("shortener.error_page"))
+    
 
 @shortener.route("/error")
 def error_page():
@@ -89,6 +94,13 @@ def handle_json():
     raw_url = data.get('url')
     if not raw_url:
         return jsonify({"error": "Missing required field: 'url'"}), 400
+
+
+
+    if len(raw_url) > maxUrlLen:
+        return jsonify({
+            "error": f"URL too long. Maximum allowed length is {maxUrlLen} characters."
+        }), 400
 
     url = normalize_url(raw_url)  # Add protocol if missing
     
