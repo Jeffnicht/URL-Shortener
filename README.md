@@ -152,5 +152,5 @@ services:
 
 **TODO**
 
-* Could implement swagger-UI for API documentation (in my opinion overkill for such a small project.
+* Could implement swagger-UI for API documentation (in my opinion overkill for such a small project).
 * Add TLS certs 
