@@ -45,7 +45,7 @@ Clone the repo:
 
 ```bash
 git clone https://github.com/Jeffnicht/URL-Shortener.git
-cd URL-shortener
+cd URL-Shortener
 ```
 
 Build and run the containers:
