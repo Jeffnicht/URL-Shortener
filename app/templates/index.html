@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL Shortener</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #1a1a1a;
+      --bg-card: #2a2a2a;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --border: #404040;
+      --error: #ef4444;
+      --success: #10b981;
+      --shadow: rgba(0, 0, 0, 0.5);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #2d3748;
+      --bg-secondary: #4a5568;
+      --bg-card: #e2e8f0;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --accent: #ed8936;
+      --accent-hover: #dd6b20;
+      --accent-glow: rgba(237, 137, 54, 0.25);
+      --border: #cbd5e1;
+      --error: #e53e3e;
+      --success: #38a169;
+      --shadow: rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 40px var(--shadow);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.6;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      font-size: 1.2rem;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px var(--accent-glow);
+      border-color: var(--accent);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    .form-container {
+      margin-bottom: 30px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .url-icon {
+      padding: 0 16px;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 18px 0;
+      font-size: 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      outline: none;
+      font-family: inherit;
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .retention-group {
+      margin-bottom: 20px;
+    }
+
+    .retention-label {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .retention-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .retention-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .retention-icon {
+      padding: 0 16px;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+    }
+
+    select {
+      flex: 1;
+      padding: 18px 16px 18px 0;
+      font-size: 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      outline: none;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    select option {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 8px;
+    }
+
+    .select-arrow {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+      font-size: 0.8rem;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px var(--accent-glow);
+    }
+
+    .submit-btn:hover::before {
+      left: 100%;
+    }
+
+    .submit-btn:active {
+      transform: translateY(-1px);
+    }
+
+    .flash {
+      margin-top: 20px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-weight: 500;
+      text-align: center;
+      border: 1px solid;
+      animation: slideIn 0.3s ease;
+    }
+
+    .flash.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    [data-theme="light"] .flash.error {
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    .flash.success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    [data-theme="light"] .flash.success {
+      background: rgba(5, 150, 105, 0.1);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    /* Result display styles */
+    .result-container {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      animation: slideIn 0.5s ease;
+    }
+
+    .result-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .result-url {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .result-url:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .url-text {
+      color: var(--accent);
+      font-weight: 600;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 1rem;
+      word-break: break-all;
+      flex: 1;
+      margin-right: 12px;
+    }
+
+    .copy-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .copy-btn.copied {
+      background: var(--success);
+      transform: scale(0.95);
+    }
+
+    .new-url-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: transparent;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .new-url-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .floating-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .shape:nth-child(1) {
+      width: 100px;
+      height: 100px;
+      top: 20%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .shape:nth-child(2) {
+      width: 60px;
+      height: 60px;
+      top: 70%;
+      right: 20%;
+      animation-delay: 2s;
+    }
+
+    .shape:nth-child(3) {
+      width: 80px;
+      height: 80px;
+      bottom: 20%;
+      left: 70%;
+      animation-delay: 4s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-20px) rotate(180deg);
+        opacity: 0.6;
+      }
+    }
+
+    /* Light theme specific improvements */
+    [data-theme="light"] {
+      background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    }
+
+    [data-theme="light"] .container {
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      border: 1px solid #a0aec0;
+    }
+
+    [data-theme="light"] .container::before {
+      background: linear-gradient(90deg, transparent, #ed8936, transparent);
+    }
+
+    [data-theme="light"] .input-wrapper,
+    [data-theme="light"] .retention-wrapper {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="light"] .input-wrapper:focus-within,
+    [data-theme="light"] .retention-wrapper:focus-within {
+      background: #ffffff;
+      border-color: #ed8936;
+      box-shadow: 0 0 0 4px rgba(237, 137, 54, 0.25);
+    }
+
+    [data-theme="light"] .result-container {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="light"] .result-url {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="light"] .result-url:hover {
+      border-color: #ed8936;
+      box-shadow: 0 0 0 3px rgba(237, 137, 54, 0.15);
+    }
+
+    [data-theme="light"] .theme-toggle {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="light"] .theme-toggle:hover {
+      border-color: #ed8936;
+      box-shadow: 0 0 20px rgba(237, 137, 54, 0.3);
+    }
+
+    [data-theme="light"] .submit-btn {
+      background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+      box-shadow: 0 4px 15px rgba(237, 137, 54, 0.3);
+    }
+
+    [data-theme="light"] .submit-btn:hover {
+      box-shadow: 0 8px 25px rgba(237, 137, 54, 0.4);
+    }
+
+    [data-theme="light"] .new-url-btn:hover {
+      border-color: #ed8936;
+      color: #ed8936;
+      background: rgba(237, 137, 54, 0.1);
+    }
+
+    [data-theme="light"] .copy-btn {
+      background: #ed8936;
+    }
+
+    [data-theme="light"] .copy-btn:hover {
+      background: #dd6b20;
+      box-shadow: 0 4px 12px rgba(237, 137, 54, 0.3);
+    }
+
+    [data-theme="light"] .shape {
+      opacity: 0.15;
+    }
+
+    [data-theme="light"] .shape:nth-child(1) {
+      background: linear-gradient(135deg, rgba(237, 137, 54, 0.2), rgba(221, 107, 32, 0.1));
+    }
+
+    [data-theme="light"] .shape:nth-child(2) {
+      background: linear-gradient(135deg, rgba(237, 137, 54, 0.15), rgba(221, 107, 32, 0.08));
+    }
+
+    [data-theme="light"] .shape:nth-child(3) {
+      background: linear-gradient(135deg, rgba(237, 137, 54, 0.1), rgba(221, 107, 32, 0.06));
+    }
+
+    [data-theme="light"] .url-text {
+      color: #ed8936;
+    }
+
+    [data-theme="light"] .stat-number {
+      color: #ed8936;
+    }
+
+    [data-theme="light"] h1 {
+      background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 30px 20px;
+        margin: 10px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .theme-toggle {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+      }
+
+      .result-url {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .url-text {
+        margin-right: 0;
+        text-align: center;
+      }
+
+      .copy-btn {
+        align-self: stretch;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="floating-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <h1>LinkShort</h1>
+      <p class="subtitle">
+        {% if shortened_url %}
+          Your URL has been shortened successfully!
+        {% else %}
+          Transform long URLs into short, shareable links
+        {% endif %}
+      </p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash error">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if shortened_url %}
+      <!-- Result Display Mode -->
+      <div class="result-container">
+        <div class="result-label">Shortened URL</div>
+        <div class="result-url">
+          <span class="url-text" id="shortenedUrl">{{ shortened_url }}</span>
+          <button class="copy-btn" onclick="copyToClipboard()">
+            <span id="copyIcon">📋</span>
+            <span id="copyText">Copy</span>
+          </button>
+        </div>
+        
+        {% if original_url %}
+        <div class="result-label">Original URL</div>
+        <div class="result-url">
+          <span class="url-text" style="color: var(--text-secondary); font-size: 0.9rem;">{{ original_url }}</span>
+        </div>
+        {% endif %}
+
+        <div class="stats">
+          <div class="stat-item">
+            {% if saved_chars and saved_chars|int > 0 %}
+              <span class="stat-number">{{ saved_chars }}</span>
+              <span class="stat-label">Chars Saved</span>
+            {% else %}
+              <span class="stat-number" style="color: var(--error);">{{ saved_chars|abs if saved_chars else '0' }}</span>
+              <span class="stat-label">Chars Added</span>
+            {% endif %}
+          </div>
+          <div class="stat-item">
+            {% if compression_ratio and compression_ratio|float > 0 %}
+              <span class="stat-number">{{ compression_ratio }}%</span>
+              <span class="stat-label">Shorter</span>
+            {% else %}
+              <span class="stat-number" style="color: var(--error);">{{ (compression_ratio|float * -1)|round(1) if compression_ratio else '0' }}%</span>
+              <span class="stat-label">Longer</span>
+            {% endif %}
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ retain or '∞' }}</span>
+            <span class="stat-label">Valid For</span>
+          </div>
+        </div>
+
+      <button class="new-url-btn" onclick="window.location.href='{{ url_for('shortener.index') }}'">
+        🔗 Shorten Another URL
+      </button>
+    {% else %}
+      <!-- Form Mode -->
+      <div class="form-container">
+        <form action="{{ url_for('shortener.shorten_url') }}" method="POST">
+          <div class="input-group">
+            <div class="input-wrapper">
+              <div class="url-icon">🔗</div>
+              <input 
+                type="text" 
+                name="url" 
+                placeholder="Paste your long URL here..." 
+                required 
+                autocomplete="url"
+              />
+            </div>
+          </div>
+          
+          <div class="retention-group">
+            <label class="retention-label" for="retain">Retention Period</label>
+            <div class="retention-wrapper">
+              <div class="retention-icon">⏰</div>
+              <select name="retain" id="retain">
+                <option value="1H">1 Hour</option>
+                <option value="6H">6 Hours</option>
+                <option value="12H">12 Hours</option>
+                <option value="1D">1 Day</option>
+                <option value="3D">3 Days</option>
+                <option value="1W">1 Week</option>
+                <option value="2W">2 Weeks</option>
+                <option value="1M">1 Month</option>
+                <option value="3M">3 Months</option>
+                <option value="6M">6 Months</option>
+                <option value="1Y">1 Year</option>
+              </select>
+              <div class="select-arrow">▼</div>
+            </div>
+          </div>
+          
+          <button type="submit" class="submit-btn">
+            ✨ Shorten URL
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      const currentTheme = body.getAttribute('data-theme');
+      
+      if (currentTheme === 'dark') {
+        body.setAttribute('data-theme', 'light');
+        themeIcon.textContent = '☀️';
+        localStorage.setItem('theme', 'light');
+      } else {
+        body.setAttribute('data-theme', 'dark');
+        themeIcon.textContent = '🌙';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    async function copyToClipboard() {
+      const urlText = document.getElementById('shortenedUrl').textContent;
+      const copyBtn = document.querySelector('.copy-btn');
+      const copyIcon = document.getElementById('copyIcon');
+      const copyText = document.getElementById('copyText');
+      
+      try {
+        await navigator.clipboard.writeText(urlText);
+        
+        // Visual feedback
+        copyBtn.classList.add('copied');
+        copyIcon.textContent = '✅';
+        copyText.textContent = 'Copied!';
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyIcon.textContent = '📋';
+          copyText.textContent = 'Copy';
+        }, 2000);
+        
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = urlText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        copyIcon.textContent = '✅';
+        copyText.textContent = 'Copied!';
+        
+        setTimeout(() => {
+          copyIcon.textContent = '📋';
+          copyText.textContent = 'Copy';
+        }, 2000);
+      }
+    }
+
+    // Load saved theme or default to dark
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const themeIcon = document.getElementById('theme-icon');
+      
+      document.body.setAttribute('data-theme', savedTheme);
+      themeIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    });
+
+    // Add some interactive effects
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.querySelector('.container');
+      
+      container.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+      });
+      
+      container.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
+  </script>
+</body>
+</html>
