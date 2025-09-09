@@ -149,10 +149,8 @@ services:
 
 * Web form usage: Access the main page (`/`) to input a URL and receive a shortened link instantly.
 
-## TODO
-Could implement swagger-UI for API documentation (in my opinion overkill for such a small project.
-Improve performance and readability 
 
-## License
+**TODO**
 
-MIT License – see LICENSE for details
+* Could implement swagger-UI for API documentation (in my opinion overkill for such a small project.
+* Add TLS certs 
