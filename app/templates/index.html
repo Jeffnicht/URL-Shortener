@@ -674,6 +674,12 @@
       {% endif %}
     {% endwith %}
 
+    {% if url_too_long %}
+      <div class="flash error">
+        <p>🚫 URL is too long! Please use a URL with 800 characters or fewer.</p>
+      </div>
+    {% endif %}
+
     {% if shortened_url %}
       <!-- Result Display Mode -->
       <div class="result-container">
