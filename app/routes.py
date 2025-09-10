@@ -51,8 +51,9 @@ def redirect_short_url(short_code):
 @shortener.route("/shorten", methods=["POST"])
 def shorten_url():
     try:
-        raw_url = request.form.get("url")
-        if len(raw_url) > maxUrlLen:
+        raw_url = request.form.get("url").strip()
+
+        if len(raw_url) -8 > maxUrlLen: #-8 becasue https adds chars 
             return render_template("index.html", url_too_long=True)
         
         url = normalize_url(raw_url)  # Add protocol if missing
@@ -88,49 +89,50 @@ def error_page():
 def handle_json():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
+    try:
+        data = request.get_json()
+        
+        raw_url = data.get('url',"").strip()
+        if not raw_url:
+            return jsonify({"error": "Missing required field: 'url'"}), 400
 
-    data = request.get_json()
-    
-    raw_url = data.get('url')
-    if not raw_url:
-        return jsonify({"error": "Missing required field: 'url'"}), 400
 
 
+        if len(raw_url) > maxUrlLen:
+            return jsonify({
+                "error": f"URL too long. Maximum allowed length is {maxUrlLen} characters."
+            }), 400
 
-    if len(raw_url) > maxUrlLen:
+        url = normalize_url(raw_url)  # Add protocol if missing
+        
+        retain = data.get('retain', "1H")
+        print(retain, url)
+        short_code = r.setUrl(url, retain=retain, is_url=True)
+
+        if not short_code or (isinstance(short_code, str) and short_code.startswith("Couldn't insert")):
+            return jsonify({
+                "error": "Couldn't insert data into the database",
+                "details": "The request was either invalid or there are internal server errors"
+            }), 500
+
+        
+        base_url = os.getenv("BASE_URL", request.host_url)
+        shortened_url = f"{base_url}{short_code}"
+
+
+        saved_chars = len(url) - len(shortened_url)
+        compression_ratio = round((saved_chars / len(url)) * 100, 2) if len(url) > 0 else 0
+
         return jsonify({
-            "error": f"URL too long. Maximum allowed length is {maxUrlLen} characters."
-        }), 400
-
-    url = normalize_url(raw_url)  # Add protocol if missing
-    
-    retain = data.get('retain', "1H")
-    print(retain, url)
-    short_code = r.setUrl(url, retain=retain, is_url=True)
-
-    if not short_code or (isinstance(short_code, str) and short_code.startswith("Couldn't insert")):
-        return jsonify({
-            "error": "Couldn't insert data into the database",
-            "details": "The request was either invalid or there are internal server errors"
-        }), 500
-
-    
-    base_url = os.getenv("BASE_URL", request.host_url)
-    shortened_url = f"{base_url}{short_code}"
-
-
-    saved_chars = len(url) - len(shortened_url)
-    compression_ratio = round((saved_chars / len(url)) * 100, 2) if len(url) > 0 else 0
-
-    return jsonify({
-    "shortened_url": shortened_url,
-    "short_code": short_code,
-    "original_url": url,
-    "retain": retain,
-    "saved_characters": saved_chars,
-    "compression_ratio_percent": compression_ratio
-        }), 200
-
+        "shortened_url": shortened_url,
+        "short_code": short_code,
+        "original_url": url,
+        "retain": retain,
+        "saved_characters": saved_chars,
+        "compression_ratio_percent": compression_ratio
+            }), 200
+    except Exception as e:
+        print("Error in handeling Json")
 @shortener.route('/api/<string:hash>', methods=['GET'])
 def api_getUrl(hash):
     try:
