@@ -51,7 +51,7 @@ cd URL-Shortener
 Build and run the containers:
 
 ```bash
-docker-compose up --build -d
+sudo docker compose up -d
 ```
 
 * Flask app runs inside Docker with Gunicorn
